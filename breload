@@ -65,7 +65,7 @@ echo "Please select the browser window by clicking the mouse"
 xwin_out=`xwininfo -int`
 browser_window=`echo $xwin_out | grep -oE 'xwininfo: +Window id: +[0-9]+' | cut -d ':' -f 3`
 
-if [ true ] || [ -z "$browser_window" ]; then
+if [ -z "$browser_window" ]; then
     cat <<EOF 
 
 FATAL ERROR: can't parse xwininfo output.
