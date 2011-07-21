@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Copyright (C) 2011 <redpill27@gmail.com>
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+function usage()
+{
+    cat <<EOF
+Usage: breload [options] directory
+Options:
+ -r        watch all subdirectories recursively
+ -i        show inotifywait output
+ -d N      wait at least N seconds before the next refresh (default 1)
+
+EOF
+    exit 2
+}
+
+
+if [ ! -x "`which xwininfo`" ] || 
+   [ ! -x "`which xdotool`" ] || 
+   [ ! -x "`which inotifywait`" ]; then
+    cat <<EOF 
+One or more required dependecies (xwininfo, xdotool, inotifywait) is missing.
+
+Debian/Ubuntu: 
+$ sudo apt-get install inotify-tools xdotool x11-utils
+EOF
+    echo 
+    exit 1
+fi
+
+inotify_opts="-e modify -qq"
+refresh_delay=1
+while true; do
+    case "$1" in
+        --help|-h) usage;;
+        -r) inotify_opts="$inotify_opts -r"; shift ;;
+        -i) inotify_opts=${inotify_opts/-qq/}; shift ;;
+        -w) refresh_delay=$1; shift 2;;
+        *)  dir=$1; break ;;
+    esac
+done
+if [ -z "$dir" ] || [ ! -d "$dir" ] ; then usage; fi
+
+
+echo "Please select the browser window by clicking the mouse"
+xwin_out=`xwininfo -int`
+browser_window=`echo $xwin_out | grep -oE 'xwininfo: +Window id: +[0-9]+' | cut -d ':' -f 3`
+
+if [ true ] || [ -z "$browser_window" ]; then
+    cat <<EOF 
+
+FATAL ERROR: can't parse xwininfo output.
+Please send the following output to redpill27@gmail.com
+--$xwin_out
+--
+EOF
+    exit 1
+fi
+
+dir=`cd $dir && pwd`
+echo "Watching $dir ..."
+while true; do
+    inotifywait --exclude '([~#]|\.bak)$' $inotify_opts $dir 2> /dev/null
+    curr_wid=`xdotool getactivewindow`
+    xdotool windowactivate $browser_window
+    xdotool key ctrl+r
+    xdotool windowactivate $curr_wid
+    sleep $refresh_delay
+done
+
