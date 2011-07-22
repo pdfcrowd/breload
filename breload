@@ -23,7 +23,7 @@
 function usage()
 {
     cat <<EOF
-Usage: breload [options] directory
+Usage: breload [options] file-or-directory
 Options:
  -r        watch all subdirectories recursively
  -i        show inotifywait output
@@ -58,7 +58,7 @@ while true; do
         *)  dir=$1; break ;;
     esac
 done
-if [ -z "$dir" ] || [ ! -d "$dir" ] ; then usage; fi
+if [ -z "$dir" ] || [ ! -e "$dir" ] ; then usage; fi
 
 
 echo "Please select the browser window by clicking the mouse"
@@ -76,7 +76,6 @@ EOF
     exit 1
 fi
 
-dir=`cd $dir && pwd`
 echo "Watching $dir ..."
 while true; do
     inotifywait --exclude '([~#]|\.bak)$' $inotify_opts $dir 2> /dev/null
