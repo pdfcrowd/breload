@@ -13,7 +13,15 @@ you save a file in your project folder.
 
 Now you can edit your project files and enjoy automatic browser refresh.
         
-Run `breload -h` to see available options.
+Run `breload -h` to see available options:
+
+    $ breload -h
+    Usage: breload [options] file-or-directory
+    Options:
+     -r        watch all subdirectories recursively
+     -d N      wait N seconds before refresh (default 0)
+     -i        show inotifywait output
+
 
 ## Dependencies
 
