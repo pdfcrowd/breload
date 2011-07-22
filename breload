@@ -26,8 +26,8 @@ function usage()
 Usage: breload [options] file-or-directory
 Options:
  -r        watch all subdirectories recursively
+ -d N      wait N seconds before refresh (default 0)
  -i        show inotifywait output
- -d N      wait at least N seconds before the next refresh (default 1)
 
 EOF
     exit 2
@@ -48,13 +48,13 @@ EOF
 fi
 
 inotify_opts="-e modify -qq"
-refresh_delay=1
+refresh_delay=0
 while true; do
     case "$1" in
         --help|-h) usage;;
         -r) inotify_opts="$inotify_opts -r"; shift ;;
         -i) inotify_opts=${inotify_opts/-qq/}; shift ;;
-        -w) refresh_delay=$1; shift 2;;
+        -d) refresh_delay=$2; shift 2;;
         *)  dir=$1; break ;;
     esac
 done
@@ -79,10 +79,10 @@ fi
 echo "Watching $dir ..."
 while true; do
     inotifywait --exclude '([~#]|\.bak)$' $inotify_opts $dir 2> /dev/null
+    sleep $refresh_delay
     curr_wid=`xdotool getactivewindow`
     xdotool windowactivate $browser_window
     xdotool key ctrl+r
     xdotool windowactivate $curr_wid
-    sleep $refresh_delay
 done
 
